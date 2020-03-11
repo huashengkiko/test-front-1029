@@ -26,7 +26,7 @@ yarn --frozen-lockfile && yarn build
 if [[ ${BUILD_TYPE} = "image" ]];
   then
     # 构建镜像
-    docker build -t ${APP_NAME}:${VERSION} .
+    docker build -t ${APP_NAME}:v${VERSION} .
   else
     # 构建zip包
     buildZip
