@@ -1,4 +1,12 @@
- # FROM nginx:1.13，下面的小
-FROM nginx:1.16.1-alpine
+FROM openjdk:8
 
-COPY ./dist /usr/share/nginx/html
+WORKDIR /home
+
+
+COPY ./deepexi-spring-cloud-provider/target/app.jar /home
+
+ADD entrypoint.sh /
+
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

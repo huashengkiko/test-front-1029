@@ -1,33 +1,34 @@
 #!/bin/bash
-set -ex
-cd `dirname $0`
 
-function yarn_check {
-  echo "检查yarn"
-  if ! which yarn -v &> /dev/null ;then
-    echo "安装yarn"
-    npm i -g yarn
-  fi
-}
+source common.sh
 
-function buildZip {
-  echo "压缩项目"
-  cd dist
-  tar -czf ../$APP_NAME-v$VERSION.tar.gz .
-  cd ..
-}
+img_mvn="maven:3.3.3-jdk-8"                 # docker image of maven
+m2_cache=~/.m2                              # the local maven cache dir
 
-# 检查yarn
-yarn_check
+h2 '准备构建项目'
 
-echo "build project"
-yarn --frozen-lockfile && yarn build
+if which mvn ; then
+    info '使用本地maven构建项目'
+    mvn clean package -DskipTests
+else
+    info '使用maven镜像['$img_mvn']构建项目'
+    docker run --rm \
+        -v $m2_cache:/root/.m2 \
+        -v $PROJECT_HOME:/usr/src/mymaven \
+        -w /usr/src/mymaven \
+        $img_mvn mvn clean package -DskipTests
+fi
+if [ $? -eq 0 ];then
+    success '项目构建成功'
+else
+    error '项目构建失败'
+    exit 1
+fi
 
-if [[ ${BUILD_TYPE} = "image" ]];
-  then
-    # 构建镜像
-    docker build -t ${APP_NAME}:v${VERSION} .
-  else
-    # 构建zip包
-    buildZip
+h2 '准备构建Docker镜像'
+
+if [ ! -z $IMAGE_NAME ];then
+    docker build --rm -t $IMAGE_NAME .
+else
+    docker build --rm -t $APP_NAME:$VERSION .
 fi
